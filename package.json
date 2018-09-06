@@ -1,10 +1,11 @@
 {
-  "name": "bbot-rocketchat-boilerplate",
-  "version": "0.0.0",
+  "name": "brocket-demo",
+  "version": "1.0.0",
   "description": "bRocket is a bBot boilerplate for building Rocket.Chat bots",
   "main": "index.js",
   "repository": "git@github.com:Amazebot/bbot-rocketchat-boilerplate.git",
-  "author": "Tim Kinnane <tim.kinnane@amazebot.chat>",
+  "author": "TK",
+  "contributors": [],
   "license": "MIT",
   "private": false,
   "engines": {
@@ -22,14 +23,20 @@
     "CUI"
   ],
   "bot": {
-    "name": "bRocket",
-    "alias": "brock",
-    "message-adapter": "rocketchat"
+    "name": "brocket",
+    "message-adapter": "rocketchat",
+    "avatar": "https://github.com/Amazebot/bbot-rocketchat-boilerplate/raw/master/img/avatar.png"
   },
   "dependencies": {
-    "bbot": "^0.3.0"
+    "bbot": "^1.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.3"
   },
   "scripts": {
-    "start": "node index.js"
+    "setup": "node init.js",
+    "start": "node index.js",
+    "watch": "nodemon index.js",
+    "debug": "nodemon --inspect index.js"
   }
 }

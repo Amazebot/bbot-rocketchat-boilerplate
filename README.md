@@ -1,41 +1,47 @@
 [create-user]: https://rocket.chat/docs/bots/creating-bot-users/
 [configure-bot]: https://rocket.chat/docs/bots/configure-bot-environment/
 
-**bRocket**
+![bRocket | A bBot boilerplate for Rocket.Chat bots](https://github.com/Amazebot/bbot-rocketchat-boilerplate/raw/master/img/banner.png)
 
-bRocket is a bBot boilerplate for building Rocket.Chat bots.
+## Setup
 
-You'll need a Rocket.Chat instance to test, then clone this repository, install
-npm dependencies and review package and environment config details below.
+## 1. 🍴  Fork or clone this repo
+  - `git clone amazebot/bbot-rocketchat-boilerplate MY_BOT`
+  - to clone without git history, add `--depth 1` flag
+  - or once cloned, start a fresh history `rm -rf .git && git init`
+## 2. 💻  Setup your project
+  - `npm install` get dependencies
+  - `npm run setup` add your details
+## 3. ✨  Test in shell
+  - `npm start -- -m shell`
+## 4. 👨‍💻  Start coding
+  - customise **index.js**
+  - look at **examples.js**
+## 5. 💬  Run in Rocket.Chat
+  - create user with bot role
+  - set login credentials in .env
+  - `npm start` (`rocketchat` is default adapter)
 
-See Rocket.Chat's docs on [Creating Bot Users][create-user] before you begin.
+___
 
-Start the bot with `npm run start`, `yarn start` or `node index.js`
+You'll need a Rocket.Chat instance to test. See Rocket.Chat's docs on
+[Creating Bot Users][create-user] before you begin.
+
+Easy deployment options coming soon.
+
+See [bbot.chat](http://bbot.chat) for get started guides.
 
 ## Configure
 
-Create a local .env file. All bBot settings require the `BOT_` prefix on
-environment variables. Try the following defaults...
+All **bBot** settings require the `BOT_` prefix on environment variables.
 
-```sh
-ROCKETCHAT_USER="brocket"
-ROCKETCHAT_PASSWORD="password"
-RESPOND_TO_DM=true
-RESPOND_TO_EDITED=true
-BOT_LOG_LEVEL="debug"
-BOT_SHELL_USER_NAME="user"
-BOT_SHELL_ROOM="room"
-```
+See Rocket.Chat's docs on [Configuring Bot Environments][configure-bot] for 
+settings specific to the SDK.
 
 Configs can be given from command line. Try `node index.js -h` for options.
 
-Configs can be set in **package.json** under the `"bot"` attribute. You should
+They can also be set in **package.json** under the `"bot"` attribute. You should
 review all the package details and customise it to your own project details.
-
-The name in the package can be used to address the bot, just as it's username.
-It will also respond to it's alias (default is **brock**).
-
-See Rocket.Chat's docs on [Configuring Bot Environments][configure-bot] for more.
 
 ## Development
 
