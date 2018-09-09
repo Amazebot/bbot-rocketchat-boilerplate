@@ -28,7 +28,7 @@
     "avatar": "https://github.com/Amazebot/bbot-rocketchat-boilerplate/raw/master/img/avatar.png"
   },
   "dependencies": {
-    "bbot": "^1.2.0"
+    "bbot": "^1.3.0"
   },
   "devDependencies": {
     "nodemon": "^1.18.3"
