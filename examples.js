@@ -18,7 +18,7 @@ const bot = require('bbot')
  *
  * Test with "Hello bots!"
 */
-bot.global.text(/(hi|hello).*bots/, (b) => b.respond('Hello :wave:'), {
+bot.global.text(/(hi|hello).*bots?/, (b) => b.respond('Hello :wave:'), {
   id: 'hello-bots'
 })
 
@@ -30,7 +30,7 @@ bot.global.text(/(hi|hello).*bots/, (b) => b.respond('Hello :wave:'), {
  * In Rocket.Chat all messages to a bot in a direct room have the name prepended
  * by the Rocket.Chat SDK before it's processed by the bot framework.
  *
- * Test with "@bRocket Hello" or just "Hello" in a DM.
+ * Test with "@brocket Hello" or just "Hello" in a DM.
 */
 bot.global.direct(/hi|hello/i, (b) => b.reply('Hey there.'), {
   id: 'hello-direct'
@@ -55,7 +55,7 @@ bot.global.text({
  * Branch callbacks allow asynchronous responding, if they return a promise.
  * State (b) includes branch matching attributes, see bbot.chat/docs/thought.
  *
- * Test with "@bRocket ping back in 5 seconds"
+ * Test with "@brocket ping back in 5 seconds"
 */
 bot.global.direct(/ping back in (\d*)/i, async (b) => {
   const ms = parseInt(b.match[1]) * 1000
@@ -99,7 +99,7 @@ bot.global.text({
     .quickReply({ text: 'Door number 1' })
     .quickReply({ text: 'Door number 2' })
     .quickReply({ text: 'Door number 3' })
-  return b.respond()
+  return b.respond().catch((err) => console.error(err))
 }, { id: 'door-prize-intro' })
 
 /**
@@ -119,7 +119,41 @@ bot.global.text({
 }, { id: 'door-prize-award' })
 
 /**
- * User details contain the source of the current message within Rocket.Chat.
+ * Branch callbacks can be async functions, to awaiting one or more processes
+ * before responding. This example uses API requests to fill a dynamic array
+ * of actions, using the url property to provide link action buttons.
+ *
+ * Test with "@brocket plan meeting" in a public or private room.
+ */
+bot.global.direct({
+  is: 'plan meeting'
+}, async (b) => {
+  if (bot.adapters.message.name !== 'rocketchat-message-adapter') return
+  b.envelope.write('Please review time zones in the room...')
+  const { id, type } = b.message.user.room
+  let room
+  const q = { roomId: id }
+  if (type === 'c') {
+    room = await bot.adapters.message.api.get('channels.members', q, true)
+  } else if (type === 'p') {
+    room = await bot.adapters.message.api.get('groups.members', q, true)
+  } else {
+    return b.respond('Sorry, that only works in channels and private groups.')
+  }
+  const offsets = room.members
+    .map((member) => member.utcOffset || undefined)
+    .filter((offset) => !!offset)
+  for (let utc of offsets) {
+    b.envelope.payload.quickReply({
+      text: `🌐 UTC ${utc}`,
+      url: `https://www.timeanddate.com/worldclock/timezone/utc${utc}`
+    })
+  }
+  b.respond()
+})
+
+/**
+ * @todo This example requires PR #11811 to be merged. Room names are undefined.
 */
 bot.global.text(/where am i/i, (b) => {
   const { name, type } = b.message.user.room
@@ -152,7 +186,9 @@ bot.settings.extend({
 
 /**
  * The bot can access lower level methods of the Rocket.Chat SDK through the
- * message adapter, once it's connected.
+ * message adapter, once it's connected. This example sets an avatar on login.
+ *
+ * Try replacing the avatar configured in package.json with your own.
  */
 bot.events.on('started', () => {
   if (bot.adapters.message.name !== 'rocketchat-message-adapter') return
@@ -163,5 +199,3 @@ bot.events.on('started', () => {
     })
   }
 })
-
-bot.start() // 🚀
