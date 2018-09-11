@@ -1,0 +1,148 @@
+#!/bin/bash
+
+# Stop NPM from complaining about useless stuff.
+export npm_config_loglevel=error
+
+# Listen for SIGINT/SIGTERM so the container can be killed with CTRL+C
+# Also prevents reboot bug where the container freezes for 30-60 seconds
+asyncRun() {
+	"$@" &
+	pid="$!"
+	trap "echo 'Stopping PID $pid'; kill -SIGTERM $pid" SIGINT SIGTERM
+
+	# Signal emitted while waiting will make the wait command return code > 128
+	# Wrap it in a loop that doesn't end before the process is indeed stopped
+	while kill -0 $pid >/dev/null 2>&1; do
+		wait
+	done
+}
+
+cat <<EOF
+
+888      888888b.            888                                                             
+888      888  "88b           888                                                             
+888      888  .88P           888                                                             
+88888b.  8888888K.   .d88b.  888888                                                          
+888 "88b 888  "Y88b d88""88b 888                                                             
+888  888 888    888 888  888 888                                                             
+888 d88P 888   d88P Y88..88P Y88b.                                                           
+88888P"  8888888P"   "Y88P"   "Y888                                                          
+                                                                                             
+8888888b.                   888               888         .d8888b.  888               888    
+888   Y88b                  888               888        d88P  Y88b 888               888    
+888    888                  888               888        888    888 888               888    
+888   d88P .d88b.   .d8888b 888  888  .d88b.  888888     888        88888b.   8888b.  888888 
+8888888P" d88""88b d88P"    888 .88P d8P  Y8b 888        888        888 "88b     "88b 888    
+888 T88b  888  888 888      888888K  88888888 888        888    888 888  888 .d888888 888    
+888  T88b Y88..88P Y88b.    888 "88b Y8b.     Y88b.  d8b Y88b  d88P 888  888 888  888 Y88b.  
+888   T88b "Y88P"   "Y8888P 888  888  "Y8888   "Y888 Y8P  "Y8888P"  888  888 "Y888888  "Y888 
+
+EOF
+
+echo "Your bBot Rocket.Chat Docker container is now starting. Please wait..."
+
+# Check if the Rocket.Chat URL has been set
+if [[ -z "${ROCKETCHAT_URL}" ]]; then
+	echo "-------------"
+  echo "----ERROR----"
+  echo "-------------"
+	echo "ROCKETCHAT_URL environment variable has not been set."
+  echo "Set this to your Rocket.Chat Server URL. e.g."
+	echo "ROCKETCHAT_URL=https://bots.rocket.chat"
+	echo "-------------"
+	echo "Exiting...."
+	exit 1
+fi
+
+# Check if the Rocket.Chat User has been set
+if [[ -z "${ROCKETCHAT_USER}" ]]; then
+	echo "-------------"
+  echo "----ERROR----"
+  echo "-------------"
+	echo "ROCKETCHAT_USER environment variable has not been set."
+  echo "Set this to the bot account username on your Rocket.Chat server. e.g."
+	echo "ROCKETCHAT_USER=brocket"
+	echo "-------------"
+	echo "Exiting...."
+	exit 1
+fi
+
+# Check if the Rocket.Chat password has been set
+if [[ -z "${ROCKETCHAT_PASSWORD}" ]]; then
+	echo "-------------"
+  echo "----ERROR----"
+  echo "-------------"
+	echo "The ROCKETCHAT_PASSWORD Environment Variable has not been set."
+  echo "Set this to the bot account password on your Rocket.Chat server. e.g."
+	echo "ROCKETCHAT_PASSWORD=supersecret"
+	echo "-------------"
+	echo "Exiting...."
+	exit 1
+fi
+
+# Check there's either rooms defined, or the bot is listening to all
+if [[ -z "${ROCKETCHAT_ROOM}" ]]; then
+  if [[ -z "${LISTEN_ON_ALL_PUBLIC}" ]]; then
+    echo "-------------"
+    echo "----ERROR----"
+    echo "-------------"
+    echo "Either ROCKETCHAT_ROOM or LISTEN_ON_ALL_PUBLIC need to be defined."
+    echo "Without rooms to join, if it's not listening on all public rooms,"
+    echo "the bot won't receive any messages to respond to. e.g."
+    echo "ROCKETCHAT_ROOM=general,my-private-room"
+    echo "or"
+    echo "LISTEN_ON_ALL_PUBLIC=true"
+    echo "-------------"
+    echo "Exiting...."
+    exit 1
+  fi
+fi
+
+# Install any required deps.
+cd /home/bbot/
+
+# Allow using custom registry for node modules
+if [[ -z "${NPM_REGISTRY}" ]]; then
+  echo "INFO: The NPM_REGISTRY environment variable has not been set."
+  echo "INFO: Using npmjs as the default."
+else 
+  echo "INFO: The NPM_REGISTRY environment variable is $NPM_REGISTRY."
+  echo "INFO: NPM will use this registry to pull packages from."
+  npm set registry $NPM_REGISTRY
+fi
+
+# This happens here as well as during the container build process.
+# This is insurance that no dependencies were missed.
+# If node_modules externally mounted, insures the base deps are there.
+echo "INFO: Attempting to install this containers dependancies"
+npm install --no-audit
+
+# Report information about optional behviour environment variables
+if [[ -z "${RESPOND_TO_DM}" ]]; then
+	echo "-------------"
+	echo "INFO: The RESPOND_TO_DM environment variable has not been set."
+	echo "INFO: Set RESPOND_TO_DM=true to respond to direct messages."
+  echo "Default: RESPOND_TO_DM=false"
+	echo "-------------"
+fi
+if [[ -z "${RESPOND_TO_EDITED}" ]]; then
+	echo "-------------"
+	echo "INFO: The RESPOND_TO_EDITED environment varialbe is not set."
+	echo "INFO: Set RESPOND_TO_EDITED=true to respond to messages after edits."
+  echo "Default: RESPOND_TO_EDITED=false"
+	echo "-------------"
+fi
+if [[ -z "${RESPOND_TO_LIVECHAT}" ]]; then
+	echo "-------------"
+	echo "INFO: The RESPOND_TO_LIVECHAT environment varialbe is not set."
+	echo "INFO: Set RESPOND_TO_LIVECHAT=true to respond to livechat messages."
+  echo "Default: RESPOND_TO_LIVECHAT=false"
+	echo "-------------"
+fi
+
+set -e
+
+export PATH="node_modules/.bin:node_modules/bbot/node_modules/.bin:$PATH"
+
+# Start bBot using the asyncRun function
+asyncRun node index.js "$@"
