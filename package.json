@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "bRocket is a bBot boilerplate for building Rocket.Chat bots",
   "main": "index.js",
+  "files": [
+    "index.js",
+    "src"
+  ],
   "repository": "git@github.com:Amazebot/bbot-rocketchat-boilerplate.git",
   "author": "TK",
   "contributors": [],
